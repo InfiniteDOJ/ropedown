@@ -104,10 +104,55 @@
             align-items: center;
         }
 
-        audio {
-            width: 100%;
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             margin-top: 0.5rem;
-            border-radius: 8px;
+        }
+
+        .play-btn {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .play-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .track-timeline {
+            flex-grow: 1;
+            height: 6px;
+            background-color: var(--border);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .track-progress {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent);
+            border-radius: 3px;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .empty-state, .coming-soon-card {
@@ -196,21 +241,79 @@
                 return;
             }
 
+            let currentlyPlayingAudio = null;
+            let currentlyPlayingBtn = null;
+
             library.forEach(track => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 
+                const audio = new Audio(track.audioUrl);
+                audio.preload = "metadata";
+
                 card.innerHTML = `
                     <div class="card-header">
                         <span class="genre-tag">${track.genre}</span>
                     </div>
                     <h3>${track.title}</h3>
-                    <audio controls preload="metadata">
-                        <source src="${track.audioUrl}" type="audio/mpeg">
-                        Your browser does not support the audio element.
-                    </audio>
+                    <div class="audio-controls">
+                        <button class="play-btn">
+                            <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <div class="track-timeline">
+                            <div class="track-progress"></div>
+                        </div>
+                    </div>
                 `;
                 
+                const playBtn = card.querySelector('.play-btn');
+                const progress = card.querySelector('.track-progress');
+                const timeline = card.querySelector('.track-timeline');
+                const svgContainer = playBtn.querySelector('svg');
+
+                const playIcon = '<path d="M8 5v14l11-7z"/>';
+                const pauseIcon = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+
+                playBtn.addEventListener('click', () => {
+                    if (currentlyPlayingAudio && currentlyPlayingAudio !== audio) {
+                        currentlyPlayingAudio.pause();
+                        currentlyPlayingBtn.querySelector('svg').innerHTML = playIcon;
+                    }
+
+                    if (audio.paused) {
+                        audio.play();
+                        svgContainer.innerHTML = pauseIcon;
+                        currentlyPlayingAudio = audio;
+                        currentlyPlayingBtn = playBtn;
+                    } else {
+                        audio.pause();
+                        svgContainer.innerHTML = playIcon;
+                        currentlyPlayingAudio = null;
+                        currentlyPlayingBtn = null;
+                    }
+                });
+
+                audio.addEventListener('timeupdate', () => {
+                    const percentage = (audio.currentTime / audio.duration) * 100;
+                    progress.style.width = percentage + '%';
+                });
+
+                audio.addEventListener('ended', () => {
+                    svgContainer.innerHTML = playIcon;
+                    progress.style.width = '0%';
+                    currentlyPlayingAudio = null;
+                    currentlyPlayingBtn = null;
+                });
+
+                timeline.addEventListener('click', (e) => {
+                    const timelineWidth = timeline.clientWidth;
+                    const clickX = e.offsetX;
+                    const duration = audio.duration;
+                    if (duration) {
+                        audio.currentTime = (clickX / timelineWidth) * duration;
+                    }
+                });
+
                 musicGrid.appendChild(card);
             });
         });
