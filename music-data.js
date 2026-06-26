@@ -1,8 +1,8 @@
 window.musicLibrary = [
     {
-        title: "Sample song",
-        genre: "Sample genre",
-        audioUrl: "audio/jersey_club_beat.mp3" 
+        title: "Twerking wit yall friends remixed",
+        genre: "HipHop, Rap",
+        audioUrl: "twyf.mp3" 
     },
     {
         title: "Sample song",
